@@ -1,11 +1,16 @@
 package com.bookmyseat.repository;
 
 import java.sql.PreparedStatement;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
+import com.bookmyseat.model.Reservation;
 
 @Repository
 public class ReservationRepository {
@@ -28,5 +33,22 @@ public class ReservationRepository {
             ps.setLong(5, amountPaise);
             return ps;
         });
+    }
+
+    public Optional<Reservation> findById(UUID id) {
+        return jdbc.query(
+                        "SELECT id, show_id, user_id, seats, amount_paise, status, created_at "
+                                + "FROM reservations WHERE id = ?",
+                        (rs, i) -> new Reservation(
+                                rs.getObject("id", UUID.class),
+                                rs.getObject("show_id", UUID.class),
+                                rs.getString("user_id"),
+                                Arrays.asList((String[]) rs.getArray("seats").getArray()),
+                                rs.getLong("amount_paise"),
+                                rs.getString("status"),
+                                rs.getObject("created_at", OffsetDateTime.class).toInstant()),
+                        id)
+                .stream()
+                .findFirst();
     }
 }
