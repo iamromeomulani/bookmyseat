@@ -1,6 +1,13 @@
 server:
   port: ${PORT:8080}          # Render/Railway inject PORT
   shutdown: graceful
+  tomcat:
+    # A stampede opens thousands of connections at the same instant. The defaults (backlog 100,
+    # 100 requests per keep-alive connection) make Tomcat reset some of them. Sized for the burst.
+    accept-count: ${TOMCAT_ACCEPT_COUNT:2000}       # pending-connection queue
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:30000}
+    max-keep-alive-requests: 10000
+    keep-alive-timeout: 60s
 
 spring:
   application:

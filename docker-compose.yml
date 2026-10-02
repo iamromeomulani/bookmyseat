@@ -24,3 +24,23 @@ services:
       DB_PASSWORD: bookmyseat
     ports:
       - "8080:8080"
+
+  # Runs the burst test from inside the Docker network (container -> container), which avoids
+  # Docker Desktop's localhost port-forwarding.   Usage:  docker compose run --rm burst
+  burst:
+    profiles: ["tools"]
+    image: eclipse-temurin:21-jdk
+    depends_on:
+      - app
+    working_dir: /work
+    volumes:
+      - ./burst:/work/burst:ro
+    environment:
+      ADMIN_KEY: ${ADMIN_KEY:-dev-admin-key}
+      USERS: ${USERS:-3000}
+      REQUESTS: ${REQUESTS:-20000}
+      SEATS: ${SEATS:-5000}
+      HOT: ${HOT:-10}
+      STORM_USERS: ${STORM_USERS:-500}
+      CONCURRENCY: ${CONCURRENCY:-1000}
+    command: ["java", "burst/Burst.java", "http://app:8080"]

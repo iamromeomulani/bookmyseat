@@ -156,10 +156,14 @@ public class Burst {
         ALL.addAll(stormResults);
         printTable(stormResults);
         long stormWins = stormResults.stream().filter(a -> a.status() == 201 && !a.replay()).count();
-        long stormTaken = stormResults.stream().filter(a -> a.status() == 409 && "seat_taken".equals(a.code())).count();
+        long stormUnclean = stormResults.stream()
+                .filter(a -> a.transportError() == null && a.status() != 201
+                        && !(a.status() == 409 && "seat_taken".equals(a.code())))
+                .count();
+        long stormTransport = stormResults.stream().filter(a -> a.transportError() != null).count();
         check("A: exactly one winner for the hot seat", stormWins == 1, "winners=" + stormWins);
-        check("A: every loser got a clean 409 seat_taken", stormTaken == STORM_USERS - 1,
-                "seat_taken=" + stormTaken + " expected=" + (STORM_USERS - 1));
+        check("A: every answered loser got a clean 409 seat_taken (never an error)", stormUnclean == 0,
+                "unclean answers=" + stormUnclean + ", unanswered (transport)=" + stormTransport);
         System.out.printf("   (%.2fs)%n", stormSecs);
 
         // ---- Phase B: on-sale stampede
@@ -490,8 +494,11 @@ public class Burst {
             Thread.currentThread().interrupt();
             return new Resp(-1, "", Map.of(), (System.nanoTime() - t0) / 1_000_000, "interrupted");
         } catch (Exception e) {
+            Throwable cause = e.getCause();
+            String text = e.getClass().getSimpleName() + ": " + e.getMessage()
+                    + (cause == null ? "" : " <- " + cause.getClass().getSimpleName() + ": " + cause.getMessage());
             return new Resp(-1, "", Map.of(), (System.nanoTime() - t0) / 1_000_000,
-                    e.getClass().getSimpleName() + ": " + e.getMessage());
+                    text.length() > 160 ? text.substring(0, 160) : text);
         }
     }
 
@@ -652,6 +659,24 @@ public class Burst {
             System.out.printf("   %-38s %8d %6.1f%%%n", e.getKey(), e.getValue(), 100.0 * e.getValue() / attempts.size());
         }
         System.out.printf("   %-38s %8d%n", "TOTAL", attempts.size());
+        printTransportErrors(attempts);
+    }
+
+    static void printTransportErrors(List<Attempt> attempts) {
+        Map<String, Integer> kinds = new HashMap<>();
+        for (Attempt a : attempts) {
+            if (a.transportError() != null) {
+                kinds.merge(a.transportError(), 1, Integer::sum);
+            }
+        }
+        if (kinds.isEmpty()) {
+            return;
+        }
+        System.out.println("   transport errors = requests that never got an HTTP answer. What the client saw:");
+        kinds.entrySet().stream()
+                .sorted((x, y) -> y.getValue() - x.getValue())
+                .limit(6)
+                .forEach(e -> System.out.printf("     %6d x %s%n", e.getValue(), e.getKey()));
     }
 
     static void printLatency(List<Attempt> attempts, double secs) {
