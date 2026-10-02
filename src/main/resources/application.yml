@@ -8,6 +8,10 @@ spring:
   threads:
     virtual:
       enabled: true           # cheap blocking threads for burst traffic
+  jackson:
+    property-naming-strategy: SNAKE_CASE   # price_paise, per_user_limit ...
+    deserialization:
+      accept-float-as-int: false            # reject 250.5 for money fields
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/bookmyseat}
     username: ${DB_USER:bookmyseat}
