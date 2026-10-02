@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: bookmyseat
+      POSTGRES_USER: bookmyseat
+      POSTGRES_PASSWORD: bookmyseat
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookmyseat -d bookmyseat"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/bookmyseat
+      DB_USER: bookmyseat
+      DB_PASSWORD: bookmyseat
+    ports:
+      - "8080:8080"
