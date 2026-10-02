@@ -34,21 +34,21 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JsonSecurityErrorHandler errors) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)                       // stateless API, no cookies
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(e -> e
-                    .authenticationEntryPoint(errors)
-                    .accessDeniedHandler(errors))
-            .authorizeHttpRequests(a -> a
-                    .requestMatchers("/actuator/**", "/error").permitAll()      // health + metrics + error page
-                    .requestMatchers(HttpMethod.POST, "/auth/token").permitAll() // how clients get a token
-                    .requestMatchers(HttpMethod.GET, "/shows/**").permitAll()    // show state is public
-                    .requestMatchers(HttpMethod.POST, "/shows").hasRole("ADMIN") // create show: admin only
-                    .anyRequest().authenticated())                               // everything else needs a token
-            .oauth2ResourceServer(o -> o
-                    .jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                    .authenticationEntryPoint(errors)
-                    .accessDeniedHandler(errors));
+                .csrf(AbstractHttpConfigurer::disable)                       // stateless API, no cookies
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(errors)
+                        .accessDeniedHandler(errors))
+                .authorizeHttpRequests(a -> a
+                        .requestMatchers("/actuator/**", "/error", "/health", "/ready", "/metrics").permitAll() // health + metrics + error page
+                        .requestMatchers(HttpMethod.POST, "/auth/token").permitAll() // how clients get a token
+                        .requestMatchers(HttpMethod.GET, "/shows/**").permitAll()    // show state is public
+                        .requestMatchers(HttpMethod.POST, "/shows").hasRole("ADMIN") // create show: admin only
+                        .anyRequest().authenticated())                               // everything else needs a token
+                .oauth2ResourceServer(o -> o
+                        .jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .authenticationEntryPoint(errors)
+                        .accessDeniedHandler(errors));
         return http.build();
     }
 

@@ -18,7 +18,9 @@ spring:
     password: ${DB_PASSWORD:bookmyseat}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:10}
-      connection-timeout: 2000          # fail fast; we turn this into a 429 later
+      # How long a request may wait for a free DB connection during a burst before we answer 429.
+      # Long enough that a stampede QUEUES instead of failing. Tuned with the burst script.
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:20000}
       initialization-fail-timeout: -1   # start even if DB is slow (cold start)
   flyway:
     enabled: true
@@ -35,6 +37,12 @@ management:
       probes:
         enabled: true         # /actuator/health/liveness and /readiness
       show-details: never
+      group:
+        readiness:
+          include: readinessState,databaseProbe   # readiness also requires the DB probe to be UP
+  metrics:
+    tags:
+      application: bookmyseat
 
 app:
   security:
