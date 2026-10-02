@@ -35,3 +35,11 @@ management:
       probes:
         enabled: true         # /actuator/health/liveness and /readiness
       show-details: never
+
+app:
+  security:
+    # HMAC key used to sign/verify tokens. MUST be overridden in production (>= 32 bytes).
+    jwt-secret: ${JWT_SECRET:dev-only-secret-change-me-in-prod-0123456789}
+    # Presenting this key to /auth/token yields an ADMIN token.
+    admin-api-key: ${ADMIN_API_KEY:dev-admin-key}
+    token-ttl: 24h
