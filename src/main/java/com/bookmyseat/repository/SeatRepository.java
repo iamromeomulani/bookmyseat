@@ -66,4 +66,17 @@ public class SeatRepository {
                 .stream()
                 .findFirst();
     }
+
+    /**
+     * Gives a seat back, but ONLY if it is still confirmed to THIS reservation.
+     * The reservation_id guard means a release can never touch a seat that now
+     * belongs to someone else, so it can never "resurrect" or steal a seat.
+     */
+    public boolean release(UUID showId, String label, UUID reservationId) {
+        int updated = jdbc.update(
+                "UPDATE seats SET status = 'available', user_id = NULL, reservation_id = NULL, updated_at = now() "
+                        + "WHERE show_id = ? AND label = ? AND reservation_id = ? AND status = 'confirmed'",
+                showId, label, reservationId);
+        return updated == 1;
+    }
 }

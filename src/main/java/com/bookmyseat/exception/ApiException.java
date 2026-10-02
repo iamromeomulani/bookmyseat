@@ -40,4 +40,8 @@ public class ApiException extends RuntimeException {
     public static ApiException notFound(String code, String message) {
         return new ApiException(HttpStatus.NOT_FOUND, code, message);
     }
+
+    public static ApiException forbidden(String code, String message) {
+        return new ApiException(HttpStatus.FORBIDDEN, code, message);
+    }
 }

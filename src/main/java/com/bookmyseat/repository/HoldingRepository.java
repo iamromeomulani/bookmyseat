@@ -42,4 +42,12 @@ public class HoldingRepository {
                 showId, userId, seats, limit);
         return rows == 1;
     }
+
+    /** Gives seats back to the user's quota (used on cancel). Runs inside the cancel transaction. */
+    public boolean release(UUID showId, String userId, int seats) {
+        int rows = jdbc.update(
+                "UPDATE user_show_holdings SET seat_count = seat_count - ? WHERE show_id = ? AND user_id = ?",
+                seats, showId, userId);
+        return rows == 1;
+    }
 }
